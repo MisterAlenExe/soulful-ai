@@ -17,7 +17,7 @@ class PreventLoggedInUserMixin:
 class UserRegisterView(PreventLoggedInUserMixin, FormView):
     template_name = "user/register.html"
     form_class = UserRegistrationForm
-    success_url = "/test-auth/"
+    success_url = "/"
 
     def form_valid(self, form):
         form.save()
@@ -28,7 +28,7 @@ class UserRegisterView(PreventLoggedInUserMixin, FormView):
 class UserLoginView(PreventLoggedInUserMixin, FormView):
     template_name = "user/login.html"
     form_class = UserLoginForm
-    success_url = "/test-auth/"
+    success_url = "/"
 
     def form_valid(self, form):
         user = form.get_user()

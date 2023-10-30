@@ -8,14 +8,20 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 
+from django.shortcuts import redirect
+from django.views.generic import View, TemplateView
 
-def check_authentication(request):
-    if request.user.is_authenticated:
-        message = "User is authenticated."
-    else:
-        message = "User is not authenticated."
 
-    return HttpResponse(message)
+class IndexPageView(View):
+    def get(self, request):
+        if request.user.is_authenticated:
+            return render(request, "core/index.html")
+        else:
+            return redirect("auth/login/")
+
+
+class ProfilePageView(TemplateView):
+    template_name = "core/profile.html"
 
 
 # load_dotenv()
