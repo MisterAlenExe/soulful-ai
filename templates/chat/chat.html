@@ -1,0 +1,66 @@
+{% extends 'core/base.html' %} {% block content %}
+
+<h1>Chat with Soulful AI</h1>
+
+<form id="chat-form">
+  {% csrf_token %}
+  <input type="text" id="prompt" placeholder="Type your message" />
+  <button type="submit">Send</button>
+</form>
+
+<div id="chat-box">
+  <!-- Chat messages will be displayed here using JavaScript -->
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  $(document).ready(async function () {
+    $("#chat-form").on("submit", async function (e) {
+      e.preventDefault();
+      const prompt = $("#prompt").val();
+
+      $("#chat-box").append("<p><strong>You:</strong>" + prompt + "</p>");
+
+      // Clear the input field
+      $("#prompt").val("");
+
+      console.log(prompt);
+
+      // Send the prompt to the server
+      try {
+        const response = await fetch("/chat/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify({ prompt: prompt }),
+        });
+
+        if (response.ok) {
+          const reader = response.body.getReader();
+
+          let responseText = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              break;
+            }
+
+            responseText += new TextDecoder("utf-8").decode(value);
+
+            $("#chat-box").html(
+              "<p><strong>Soulful AI: </strong>" + responseText + "</p>"
+            );
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+  });
+</script>
+
+{% endblock content %}

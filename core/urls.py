@@ -9,4 +9,5 @@ urlpatterns = [
     path("", IndexPageView.as_view(), name="index"),
     path("profile/", ProfilePageView.as_view(), name="profile"),
     path("auth/", include("user.urls"), name="auth"),
+    path("chat/", include("chat.urls"), name="chat"),
 ]
