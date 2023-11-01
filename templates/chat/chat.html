@@ -1,32 +1,97 @@
-{% extends 'core/base.html' %} {% block content %}
+{% extends 'core/base.html' %} {% block static %}
 
-<h1>Chat with Soulful AI</h1>
+<style>
+  .chat-container {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+  }
 
-<form id="chat-form">
-  {% csrf_token %}
-  <input type="text" id="prompt" placeholder="Type your message" />
-  <button type="submit">Send</button>
-</form>
+  .chat-messages {
+    padding: 15px;
+    overflow-y: scroll;
+    height: 80vh;
+  }
 
-<div id="chat-box">
-  <!-- Chat messages will be displayed here using JavaScript -->
+  .message {
+    background-color: #e1f3fb;
+    border-radius: 5px;
+    margin: 5px 0;
+    padding: 10px;
+    display: flex;
+    width: fit-content;
+    max-width: 50%;
+  }
+
+  .ai-message {
+    background-color: #dcf8c6;
+  }
+
+  .user-message.message {
+    margin-left: auto;
+  }
+
+  #chat-form {
+    padding: 15px;
+    position: absolute;
+    bottom: 10px;
+    width: 50%;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+  }
+
+  .form-control {
+    border-radius: 20px;
+  }
+</style>
+
+{% endblock static %} {% block content %}
+
+<div class="chat-container">
+  <div class="chat-messages"></div>
+  <form id="chat-form">
+    <div class="input-group">
+      <input
+        type="text"
+        id="prompt"
+        class="form-control"
+        placeholder="Type your message here..."
+      />
+      <button type="submit" class="btn btn-primary">Send</button>
+    </div>
+  </form>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+  function createAIBubble(id) {
+    $(".chat-messages").append(
+      `<div class="message ai-message"> <span class="message-text" data-id="${id}"></span> </div>`
+    );
+  }
+
+  function addAIMessage(id, message) {
+    $(`.message-text[data-id="${id}"]`).text(message);
+  }
+
+  function addUserMessage(message) {
+    $(".chat-messages").append(
+      `<div class="message user-message"> <span class="message-text">${message}</span> </div>`
+    );
+  }
+
   $(document).ready(async function () {
     $("#chat-form").on("submit", async function (e) {
       e.preventDefault();
       const prompt = $("#prompt").val();
 
-      $("#chat-box").append("<p><strong>You:</strong>" + prompt + "</p>");
+      addUserMessage(prompt);
+      createAIBubble(prompt);
 
-      // Clear the input field
       $("#prompt").val("");
 
-      console.log(prompt);
-
-      // Send the prompt to the server
       try {
         const response = await fetch("/chat/", {
           method: "POST",
@@ -51,9 +116,7 @@
 
             responseText += new TextDecoder("utf-8").decode(value);
 
-            $("#chat-box").html(
-              "<p><strong>Soulful AI: </strong>" + responseText + "</p>"
-            );
+            addAIMessage(prompt, responseText);
           }
         }
       } catch (error) {
