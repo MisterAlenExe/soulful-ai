@@ -17,6 +17,8 @@ function addUserMessage(message) {
 }
 
 $(document).ready(async function () {
+  const chatRoomId = $("#chat-room.active").data("id");
+
   $("#chat-form").on("submit", async function (e) {
     e.preventDefault();
     const prompt = $("#prompt").val();
@@ -35,7 +37,10 @@ $(document).ready(async function () {
           "Content-Type": "application/json",
           "X-CSRFToken": csrfToken,
         },
-        body: JSON.stringify({ prompt: prompt }),
+        body: JSON.stringify({
+          prompt: prompt,
+          chat_room_id: chatRoomId,
+        }),
       });
 
       if (response.ok) {
@@ -68,24 +73,27 @@ $(document).ready(async function () {
 
     const csrfToken = $("input[name=csrfmiddlewaretoken]").val();
 
-    console.log(name);
-
-    try {
-      await fetch("/chat/new/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify({ name: name }),
-      }).then((response) => {
-        console.log(response);
+    await fetch("/chat/new/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken,
+      },
+      body: JSON.stringify({ name: name }),
+    })
+      .then((response) => {
         if (response.ok) {
-          console.log("ok");
+          return response.json();
+        } else {
+          throw new Error("Something went wrong");
         }
+      })
+      .then((data) => {
+        const uuid = data["uuid"];
+        window.location.href = `/chat/${uuid}/`;
+      })
+      .catch((error) => {
+        console.log(error);
       });
-    } catch (error) {
-      console.log(error);
-    }
   });
 });

@@ -12,7 +12,7 @@ import tiktoken
 import os
 from dotenv import load_dotenv
 
-from .models import ChatRoom
+from .models import ChatRoom, Message
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -70,18 +70,17 @@ def num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613"):
 class ChatPageView(LoginRequiredMixin, View):
     login_url = "/auth/login/"
 
-    def generate_answer(self, query):
+    def generate_answer(self, queries, chat_room):
         messages = [
             {
                 "role": "system",
                 "content": "You are Soulful AI. You have to help people with their mental problems. Don't snap back, be kind and responsive. Write your response in HTML format. Available tags: <b>, <i>, <u>, <br>, <ul><li>item</li></ul>",
             },
-            {
-                "role": "user",
-                "content": query,
-            },
         ]
+        messages.extend(queries)
+
         print(f"Number of tokens: {num_tokens_from_messages(messages)}")
+        result = ""
         for chunk in openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=messages,
@@ -92,17 +91,32 @@ class ChatPageView(LoginRequiredMixin, View):
         ):
             content = chunk["choices"][0].get("delta", {}).get("content")
             if content is not None:
+                result += content
                 yield content
+            elif chunk["choices"][0]["finish_reason"] == "stop":
+                Message.objects.create(
+                    chat_room=chat_room,
+                    content=result,
+                    is_ai=True,
+                )
 
     def get(self, request, uuid=None):
         user = request.user
         chat_rooms = ChatRoom.objects.filter(created_by=user)
         if uuid is not None:
-            chat_room = ChatRoom.objects.get(uuid=uuid)
+            current_room = ChatRoom.objects.get(uuid=uuid)
+            if current_room is None:
+                return render(request, "chat/chat.html", {"chat_rooms": chat_rooms})
+            messages = Message.objects.filter(chat_room=current_room)
             return render(
                 request,
                 "chat/chat.html",
-                {"chat_room": chat_room, "chat_rooms": chat_rooms},
+                {
+                    "current_room": current_room,
+                    "messages": messages,
+                    "chat_rooms": chat_rooms,
+                    "user": user,
+                },
             )
         return render(request, "chat/chat.html", {"chat_rooms": chat_rooms})
 
@@ -111,10 +125,28 @@ class ChatPageView(LoginRequiredMixin, View):
         try:
             data = json.loads(request.body)
             prompt = data["prompt"]
+            chat_room_id = data["chat_room_id"]
+
+            chat_room = ChatRoom.objects.get(uuid=chat_room_id)
 
             print(prompt)
 
-            response = self.generate_answer(prompt)
+            Message.objects.create(
+                chat_room=chat_room,
+                sender=request.user,
+                content=prompt,
+                is_ai=False,
+            )
+
+            messages = Message.objects.filter(chat_room=chat_room)
+            queries = []
+            for message in messages:
+                if message.is_ai:
+                    queries.append({"role": "assistant", "content": message.content})
+                else:
+                    queries.append({"role": "user", "content": message.content})
+
+            response = self.generate_answer(queries, chat_room)
 
             return StreamingHttpResponse(response)
         except Exception as e:
@@ -125,7 +157,6 @@ class ChatPageView(LoginRequiredMixin, View):
 class NewChatPageView(LoginRequiredMixin, View):
     login_url = "/auth/login/"
 
-    @csrf_protect_m
     def post(self, request):
         try:
             data = json.loads(request.body)

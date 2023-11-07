@@ -20,7 +20,9 @@
           {% for chat_room in chat_rooms %}
           <a
             href="{% url 'chat_by_uuid' chat_room.uuid %}"
-            class="list-group-item list-group-item-action py-3 lh-tight"
+            class="list-group-item list-group-item-action py-3 lh-tight {% if current_room == chat_room %} active {% endif %}"
+            data-id="{{ chat_room.uuid }}"
+            id="chat-room"
           >
             <div
               class="d-flex w-100 align-items-center justify-content-between"
@@ -34,9 +36,19 @@
       </div>
     </div>
     <div class="col-10">
-      {% if chat_room %}
+      {% if current_room %}
       <div class="chat-container">
-        <div class="chat-messages"></div>
+        <div class="chat-messages">
+          {% for message in messages %} {% if message.sender == user %}
+          <div class="message user-message">
+            <span class="message-text"> {{ message.content }} </span>
+          </div>
+          {% else %}
+          <div class="message ai-message">
+            <span class="message-text"> {{ message.content|safe }} </span>
+          </div>
+          {% endif %} {% endfor %}
+        </div>
         <form id="chat-form">
           {% csrf_token %}
           <div class="input-group">
@@ -63,6 +75,7 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <form id="new-chat-form">
+          {% csrf_token %}
           <div class="modal-header">
             <h5 class="modal-title" id="newChatModalLabel">
               Create a new chat
