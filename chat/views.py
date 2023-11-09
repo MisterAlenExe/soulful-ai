@@ -138,9 +138,10 @@ class ChatPageView(LoginRequiredMixin, View):
                 is_ai=False,
             )
 
-            messages = Message.objects.filter(chat_room=chat_room)
+            messages = Message.objects.filter(chat_room=chat_room)[:4:-1]
             queries = []
             for message in messages:
+                print(message.content)
                 if message.is_ai:
                     queries.append({"role": "assistant", "content": message.content})
                 else:
