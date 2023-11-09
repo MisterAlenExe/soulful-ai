@@ -153,6 +153,18 @@ class ChatPageView(LoginRequiredMixin, View):
             print(e)
             return StreamingHttpResponse("Something went wrong")
 
+    def delete(self, request, uuid):
+        try:
+            chat_room = ChatRoom.objects.get(
+                uuid=uuid,
+                created_by=request.user,
+            )
+            chat_room.delete()
+            return JsonResponse({"success": True})
+        except Exception as e:
+            print(e)
+            return JsonResponse({"error": "Something went wrong"})
+
 
 class NewChatPageView(LoginRequiredMixin, View):
     login_url = "/auth/login/"
