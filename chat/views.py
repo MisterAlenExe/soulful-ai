@@ -1,6 +1,8 @@
 import json
+from datetime import datetime, timedelta
 
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.generic.edit import View
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
@@ -102,7 +104,9 @@ class ChatPageView(LoginRequiredMixin, View):
 
     def get(self, request, uuid=None):
         user = request.user
-        chat_rooms = ChatRoom.objects.filter(created_by=user)
+        chat_rooms = ChatRoom.objects.filter(created_by=user).order_by("-created_at")
+        for room in chat_rooms:
+            room.created_at = format_time_difference(room.created_at)
         if uuid is not None:
             current_room = ChatRoom.objects.get(uuid=uuid)
             if current_room is None:
@@ -184,3 +188,29 @@ class NewChatPageView(LoginRequiredMixin, View):
         except Exception as e:
             print(e)
             return JsonResponse({"error": "Something went wrong"})
+
+
+def format_time_difference(past_date):
+    current_date = timezone.now()
+    time_difference = current_date - past_date
+
+    if time_difference < timedelta(minutes=1):
+        return "just now"
+    elif time_difference < timedelta(hours=1):
+        minutes = time_difference.seconds // 60
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+    elif time_difference < timedelta(days=1):
+        hours = time_difference.seconds // 3600
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    elif time_difference < timedelta(weeks=1):
+        days = time_difference.days
+        return f"{days} day{'s' if days > 1 else ''} ago"
+    elif time_difference < timedelta(weeks=4):
+        weeks = time_difference.days // 7
+        return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+    elif time_difference < timedelta(days=365):
+        months = time_difference.days // 30
+        return f"{months} month{'s' if months > 1 else ''} ago"
+    else:
+        years = time_difference.days // 365
+        return f"{years} year{'s' if years > 1 else ''} ago"

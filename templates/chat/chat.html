@@ -19,7 +19,7 @@
         <div class="list-group list-group-flush scrollarea">
           {% for chat_room in chat_rooms %}
           <div
-            class="d-flex justify-content-between align-items-center rounded-pill pb-2"
+            class="d-flex justify-content-between align-items-center rounded pb-2"
           >
             <a
               href="{% url 'chat_by_uuid' chat_room.uuid %}"
@@ -30,7 +30,7 @@
               <div
                 class="d-flex w-100 align-items-center justify-content-between"
               >
-                <strong class="mb-1">{{ chat_room.name }}</strong>
+                <strong>{{ chat_room.name }}</strong>
                 <small>{{ chat_room.created_at }}</small>
               </div>
             </a>
