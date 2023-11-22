@@ -57,13 +57,16 @@ class ChatPageView(LoginRequiredMixin, View):
                 is_ai=False,
             )
 
-            messages = Message.objects.filter(chat_room=chat_room)[:4:-1]
+            messages = Message.objects.filter(chat_room=chat_room).order_by(
+                "-timestamp"
+            )[:5:-1]
             queries = []
             for message in messages:
-                print(message.content)
                 if message.is_ai:
+                    print(f"AI: {message.content}")
                     queries.append({"role": "assistant", "content": message.content})
                 else:
+                    print(f"USER: {message.content}")
                     queries.append({"role": "user", "content": message.content})
 
             response = generate_answer(queries, chat_room)
