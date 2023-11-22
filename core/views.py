@@ -1,6 +1,6 @@
 from django.views import View
 from django.shortcuts import redirect
-from django.views.generic import View, TemplateView
+from django.views.generic import View
 
 
 class IndexPageView(View):
@@ -9,7 +9,3 @@ class IndexPageView(View):
             return redirect("chat/")
         else:
             return redirect("auth/login/")
-
-
-class ProfilePageView(TemplateView):
-    template_name = "core/profile.html"
